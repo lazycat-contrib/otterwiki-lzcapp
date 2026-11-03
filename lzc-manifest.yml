@@ -1,6 +1,10 @@
 application:
   subdomain: otterwiki
   multi_instance: false
+  # This app authenticates its own users, so it is exposed directly
+  # instead of sitting behind the platform login gate.
+  public_path:
+    - /
   upstreams:
     - location: /package-licenses/
       backend: file:///lzcapp/pkg/content/licenses/
@@ -44,7 +48,8 @@ usage: |
   - 已把读、写、附件三项访问级别都设为"注册用户"，**必须登录才能查看和编辑**，
     不会出现整站公开可读的情况；不存在内置弱口令。
   - 会话密钥由平台稳定密钥生成，每个部署不同；改动会导致所有人需要重新登录。
-  - 应用经懒猫入口鉴权访问。
+  - 应用直接对外开放，由应用自己的登录页鉴权：
+    自带账号体系的服务再套一层平台鉴权会造成重复登录，所以用 public_path。
 
   说明：
   - 单容器部署，内置 SQLite 与 git 存储，无需额外数据库。
