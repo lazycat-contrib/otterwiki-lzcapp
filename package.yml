@@ -1,6 +1,6 @@
 package: community.lazycat.app.otterwiki
 name: OtterWiki
-version: 0.0.0
+version: 2.26.2
 description: "Markdown wiki with git-backed storage: write pages in Markdown, keep history in git."
 min_os_version: "1.5.0"
 homepage: https://github.com/redimp/otterwiki
