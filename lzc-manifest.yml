@@ -1,0 +1,52 @@
+application:
+  subdomain: otterwiki
+  multi_instance: false
+  upstreams:
+    - location: /package-licenses/
+      backend: file:///lzcapp/pkg/content/licenses/
+    - location: /
+      backend: http://otterwiki:80/
+
+services:
+  otterwiki:
+    # upstream: redimp/otterwiki:2.26.2
+    image: docker.1ms.run/redimp/otterwiki:2.26.2
+    environment:
+      - SITE_NAME=OtterWiki
+      # settings.cfg.skeleton defaults READ_ACCESS to ANONYMOUS, which would
+      # publish the whole wiki to anyone opening the URL. Raise the three access
+      # levels so an account is required to read, write or fetch attachments.
+      # AUTH_METHOD is deliberately left at its default (local accounts), since
+      # the proxy-header mode is only for running behind an identity proxy.
+      - READ_ACCESS=REGISTERED
+      - WRITE_ACCESS=REGISTERED
+      - ATTACHMENT_ACCESS=REGISTERED
+      # Signs session cookies; a stable value keeps logins valid across restarts.
+      - |-
+        SECRET_KEY={{ stable_secret "otterwiki_secret_key" | replace "\r" "" | replace "\n" "" }}
+      - TZ=Asia/Shanghai
+    binds:
+      # pages, git history, sqlite metadata and uploads all live here
+      - /lzcapp/var/app-data:/app-data
+
+usage: |
+  OtterWiki 是 Markdown 维基：用 Markdown 写页面，内容存在 git 里，天然带版本历史。
+
+  使用方法：
+  1. 打开应用，点"注册"创建账号——**第一个注册的账号就是管理员**，密码自己设。
+  2. 在首页点"新建页面"，用 Markdown 写内容，支持标题、列表、表格、代码块和图片。
+  3. 保存后页面会自动提交到内置的 git 仓库，可以在"历史"里查看每次改动和差异。
+  4. 管理员可以在"设置"里调整站点名称、注册审批、外观等。
+
+  数据与安全：
+  - 页面内容、git 历史、上传附件都在 /lzcapp/var/app-data，卸载应用会一并删除，请定期备份
+    （也可以在设置里导出仓库）。
+  - 已把读、写、附件三项访问级别都设为"注册用户"，**必须登录才能查看和编辑**，
+    不会出现整站公开可读的情况；不存在内置弱口令。
+  - 会话密钥由平台稳定密钥生成，每个部署不同；改动会导致所有人需要重新登录。
+  - 应用经懒猫入口鉴权访问。
+
+  说明：
+  - 单容器部署，内置 SQLite 与 git 存储，无需额外数据库。
+  - 首次启动为空白站点，创建首个账号后即可开始写页面。
+  - 未做真机验证：注册、建页面、历史对比以及重启后持久化均未在设备上实测。
